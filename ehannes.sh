@@ -6,6 +6,8 @@
 PGVER=9.3.4
 # MonetDB
 MVER=11.17.13
+# MariaDB
+MAVER=10.0.10
 
 # protobuf stuff, does probably not need to change as fast
 PBVER=2.5.0
@@ -17,56 +19,55 @@ IDIR=$DIR/.install
 
 PINS=$IDIR/postgresql-$PGVER/
 MINS=$IDIR/monetdb-$MVER/
+MAINS=$IDIR/mariadb-$MAVER/
 
 PBCINS=$IDIR/protobuf-c-$PBCVER/
 PBINS=$IDIR/protobuf-$PBVER/
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PBINS/lib:$PBCINS/lib
 
-if [ ! -f $MINS/bin/mserver5 ] || [ ! -f $PINS/bin/postgres ] || [ ! -f $PINS/lib/cstore_fdw.so ] ; then
-	mkdir -p $SDIR
-	mkdir -p $IDIR
+mkdir -p $SDIR
+mkdir -p $IDIR
 
-	# download sources
-	PGURL=http://ftp.postgresql.org/pub/source/v$PGVER/postgresql-$PGVER.tar.gz
+# clean up source dir first
+rm -rf $SDIR/*
+
+# MonetDB installer
+if [ ! -f $MINS/bin/mserver5 ] ; then
+	rm -rf $MINS
 	MURL=http://www.monetdb.org/downloads/sources/Latest/MonetDB-$MVER.tar.bz2
-
-	rm -rf $SDIR/*
-
-	wget $PGURL -P $SDIR
 	wget $MURL -P $SDIR --no-check-certificate
-	git clone https://github.com/citusdata/cstore_fdw/ $SDIR/cstore_fdw
+	tar xvf $SDIR/MonetDB-*.tar.* -C $SDIR
+	MSRC=$SDIR/MonetDB-$MVER/
+	cd $MSRC
+	./configure --prefix=$MINS --enable-rubygem=no --enable-python3=no --enable-python2=no --enable-perl=no --enable-geos=no --enable-python=no --enable-geom=no --enable-fits=no --enable-jaql=no --enable-gsl=no --enable-odbc=no --enable-jdbc=no --enable-merocontrol=no
+	make -j install
+	cd $DIR
+	rm -rf $MSRC $SDIR/MonetDB-*.tar.*
+fi
 
-	# download, unpack and install protobuf & protobuf-c, needed for cstore_fdw
-	wget https://protobuf.googlecode.com/files/protobuf-$PBVER.tar.gz -P $SDIR
-	wget https://protobuf-c.googlecode.com/files/protobuf-c-$PBCVER.tar.gz -P $SDIR
-	wget http://www.tpc.org/tpch/spec/tpch_2_16_1.zip -P $SDIR
-
-	rm -rf $IDIR/*
-
-	# unpack everything
-	for i in $SDIR/*.tar.*; do tar xvf $i -C $SDIR; done
-	unzip $SDIR/tpch_*.zip -d $SDIR
-
-	# make TPCH dbgen
-	cd $SDIR/tpch_2_16_1/dbgen
-	sed -e 's/DATABASE\s*=/DATABASE=DB2/' -e 's/MACHINE\s*=/MACHINE=LINUX/' -e 's/WORKLOAD\s*=/WORKLOAD=TPCH/' -e 's/CC\s*=/CC=gcc/' makefile.suite > Makefile
-	make
-	mkdir $IDIR/dbgen/
-	cp dbgen dists.dss $IDIR/dbgen/
-
-	# okay, now compile everything
+# PostgreSQL installer
+if [ ! -f $PINS/bin/postgres ] ; then
+	rm -rf $PINS
+	PGURL=http://ftp.postgresql.org/pub/source/v$PGVER/postgresql-$PGVER.tar.gz
+	wget $PGURL -P $SDIR
+	tar xvf $SDIR/postgresql-*.tar.* -C $SDIR
 	PSRC=$SDIR/postgresql-$PGVER/
 	cd $PSRC
 	./configure --prefix=$PINS
 	make
 	make install
+	cd $DIR
+	rm -rf $PSRC $SDIR/postgresql-*.tar.*
+fi
 
-	MSRC=$SDIR/MonetDB-$MVER/
-	cd $MSRC
-	./configure --prefix=$MINS --enable-rubygem=no --enable-python3=no --enable-python2=no --enable-perl=no --enable-geos=no --enable-python=no --enable-geom=no --enable-fits=no --enable-jaql=no --enable-gsl=no --enable-odbc=no --enable-jdbc=no --enable-merocontrol=no
-	make -j install
+# Citusdata installer
+if [ ! -f $PINS/lib/cstore_fdw.so ] ; then
+	git clone https://github.com/citusdata/cstore_fdw/ $SDIR/cstore_fdw
+	wget https://protobuf.googlecode.com/files/protobuf-$PBVER.tar.gz -P $SDIR
+	wget https://protobuf-c.googlecode.com/files/protobuf-c-$PBCVER.tar.gz -P $SDIR
+	tar xvf $SDIR/protobuf-*.tar.* -C $SDIR
 
-	# protobuf and protbuf-c are dependencies of cstore
+	# protobuf and protbuf-c are dependencies of citusdb-store
 	PBSRC=$SDIR/protobuf-$PBVER/
 	cd $PBSRC
 	./configure --prefix=$PBINS
@@ -77,15 +78,45 @@ if [ ! -f $MINS/bin/mserver5 ] || [ ! -f $PINS/bin/postgres ] || [ ! -f $PINS/li
 	./configure --prefix=$PBCINS CXXFLAGS=-I$IDIR/protobuf-$PBVER/include LDFLAGS=-L$IDIR/protobuf-$PBVER/lib PATH=$PATH:$PBINS/bin/
 	make -j install
 
-	# cstore is a pgplugin, therefore it has to be built last
+	# cstore is a pgplugin
 	CSRC=$SDIR/cstore_fdw
 	cd $CSRC
+	# some funny include path messing
 	PATH=$PATH:$PINS/bin/:$PBCINS/bin/ CPATH=$CPATH:$PBCINS/include LIBRARY_PATH=$LIBRARY_PATH:$PBCINS/lib make -j install
-
-	# this should be it, check for certain files
-
-	rm -rf $SDIR/*
+	cd $DIR
+	rm -rf $CSRC $PBCSRC $PBSRC $SDIR/protobuf-*.tar.*
 fi
+
+# MariaDB installer
+if [ ! -f $MAINS/bin/mysqld ] ; then
+	rm -rf $MAINS
+	MAURL=http://mariadb.mirror.triple-it.nl//mariadb-$MAVER/kvm-tarbake-jaunty-x86/mariadb-$MAVER.tar.gz
+	wget $MAURL -P $SDIR
+	tar xvf $SDIR/mariadb-*.tar.* -C $SDIR
+	MASRC=$SDIR/mariadb-$MAVER/
+	cd $MASRC
+	cmake -DCMAKE_INSTALL_PREFIX:PATH=/scratch/hannes/compare/mariadb-install .
+	make
+	make install
+	cd $DIR
+	rm -rf $MASRC $SDIR/mariadb-*.tar.*
+fi
+
+# TPC-H dbgen installer
+if [ ! -f $IDIR/dbgen/dbgen ] ; then
+	rm -rf $IDIR/dbgen/
+	wget http://www.tpc.org/tpch/spec/tpch_2_16_1.zip -P $SDIR
+	unzip $SDIR/tpch_*.zip -d $SDIR
+	cd $SDIR/tpch_2_16_1/dbgen
+	sed -e 's/DATABASE\s*=/DATABASE=DB2/' -e 's/MACHINE\s*=/MACHINE=LINUX/' -e 's/WORKLOAD\s*=/WORKLOAD=TPCH/' -e 's/CC\s*=/CC=gcc/' makefile.suite > Makefile
+	make
+	mkdir $IDIR/dbgen/
+	cp dbgen dists.dss $IDIR/dbgen/
+	rm -rf $SDIR/tpch_*
+fi
+
+# in case something was left
+rm -rf $SDIR/*
 
 
 # some sys setup for PostgreSQL according to Dr. Kyzirakos
@@ -166,7 +197,8 @@ mkdir -p $DDIR
 mkdir -p $FARM
 mkdir -p $QRDIR
 
-TIMINGCMD="/usr/bin/time -o $DIR/.time -f %e"
+TIMINGCMD="/usr/bin/time -o $DIR/.time -f %e "
+TIMEOUTCMD="timeout -k 30m "
 
 for SF in 1 # 5 10 # 1 30
 do
@@ -182,7 +214,7 @@ do
 		mv *.tbl $SFDDIR
 	fi
 	cd $DIR
-	for DB in citusdata postgres monetdb
+	for DB in mariadb citusdata postgres monetdb
 	do
 		DBNAME=$DB-sf$SF
 		DBFARM=$FARM/$DBNAME/
@@ -214,6 +246,14 @@ do
 			CREATEDBCMD="$PINS/bin/createdb -p $PORT tpch"
 
 		fi
+
+		if [ "$DB" == "mariadb" ] ; then
+			SERVERCMD="$MAINS/bin/mysqld --basedir=$MAINS -P $PORT --datadir="
+			CLIENTCMD="$MAINS/bin/mysql -P $PORT -N tpcd -B <" 
+			INITFCMD=""
+			CREATEDBCMD=""
+		fi
+
 		if [ ! -d $DBFARM ] ; then
 			# clear caches (fair loading)
 			#sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
@@ -264,7 +304,7 @@ do
 				sleep 5
 				q=${i%.sql}
 				qn=`basename $q`
-				$TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-coldrun$coldrun-q$qn.out
+				$TIMEOUTCMD $TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-coldrun$coldrun-q$qn.out
 				QTIME=`cat $DIR/.time`
 				echo -e "$DB\t$SF\tcoldruns\t$qn\t$QTIME" >> $RESFL
 				kill `jobs -p`
@@ -282,7 +322,7 @@ do
 			do
 				q=${i%.sql}
 				qn=`basename $q`
-				$TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-warmup$warmup-q$qn.out
+				$TIMEOUTCMD $TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-warmup$warmup-q$qn.out
 				QTIME=`cat $DIR/.time`
 				echo -e "$DB\t$SF\twarmup\t$qn\t$QTIME" >> $RESFL
 			done
@@ -295,7 +335,7 @@ do
 			do
 				q=${i%.sql}
 				qn=`basename $q`
-				$TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-hotrun$hotrun-q$qn.out
+				$TIMEOUTCMD $TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-hotrun$hotrun-q$qn.out
 				QTIME=`cat $DIR/.time`
 				echo -e "$DB\t$SF\thotruns\t$qn\t$QTIME" >> $RESFL
 			done

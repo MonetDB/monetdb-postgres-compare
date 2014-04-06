@@ -207,7 +207,7 @@ mkdir -p $QRDIR
 TIMINGCMD="/usr/bin/time -o $DIR/.time -f %e "
 TIMEOUTCMD="timeout -k 35m 30m "
 
-for SF in 1 # 5 10 # 1 30
+for SF in 1 5 10
 do
 	# check if we have data
 	SFDDIR=$DDIR/sf-$SF/

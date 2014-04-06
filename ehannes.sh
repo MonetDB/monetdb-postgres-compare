@@ -31,6 +31,9 @@ mkdir -p $IDIR
 # clean up source dir first
 rm -rf $SDIR/*
 
+# remove this thing to force a rebuild of the citusdata extension, it might change quickly
+rm $PINS/lib/cstore_fdw.so
+
 # MonetDB installer
 if [ ! -f $MINS/bin/mserver5 ] ; then
 	rm -rf $MINS
@@ -63,21 +66,23 @@ fi
 # Citusdata installer
 if [ ! -f $PINS/lib/cstore_fdw.so ] ; then
 	git clone https://github.com/citusdata/cstore_fdw/ $SDIR/cstore_fdw
-	wget https://protobuf.googlecode.com/files/protobuf-$PBVER.tar.gz -P $SDIR
-	wget https://protobuf-c.googlecode.com/files/protobuf-c-$PBCVER.tar.gz -P $SDIR
-	tar xvf $SDIR/protobuf-*.tar.* -C $SDIR
+	if [ ! -f $PBINS/bin/protoc ] || [ ! -f $PBCINS/bin/protoc-c ] ; then
+		wget https://protobuf.googlecode.com/files/protobuf-$PBVER.tar.gz -P $SDIR
+		wget https://protobuf-c.googlecode.com/files/protobuf-c-$PBCVER.tar.gz -P $SDIR
+		tar xvf $SDIR/protobuf-$PBVER.tar.gz -C $SDIR
+		tar xvf $SDIR/protobuf-c-$PBCVER.tar.gz -C $SDIR
 
-	# protobuf and protbuf-c are dependencies of citusdb-store
-	PBSRC=$SDIR/protobuf-$PBVER/
-	cd $PBSRC
-	./configure --prefix=$PBINS
-	make -j install
+		# protobuf and protbuf-c are dependencies of citusdb-store
+		PBSRC=$SDIR/protobuf-$PBVER/
+		cd $PBSRC
+		./configure --prefix=$PBINS
+		make -j install
 
-	PBCSRC=$SDIR/protobuf-c-$PBCVER/
-	cd $PBCSRC
-	./configure --prefix=$PBCINS CXXFLAGS=-I$IDIR/protobuf-$PBVER/include LDFLAGS=-L$IDIR/protobuf-$PBVER/lib PATH=$PATH:$PBINS/bin/
-	make -j install
-
+		PBCSRC=$SDIR/protobuf-c-$PBCVER/
+		cd $PBCSRC
+		./configure --prefix=$PBCINS CXXFLAGS=-I$IDIR/protobuf-$PBVER/include LDFLAGS=-L$IDIR/protobuf-$PBVER/lib PATH=$PATH:$PBINS/bin/
+		make -j install
+	fi
 	# cstore is a pgplugin
 	CSRC=$SDIR/cstore_fdw
 	cd $CSRC
@@ -119,7 +124,7 @@ fi
 rm -rf $SDIR/*
 
 
-# some sys setup for PostgreSQL according to Dr. Kyzirakos
+# some sys setup for PostgreSQL according to Dr. Kyzirakos (TM)
 
 ### RAM
 ## 4 GB of RAM
@@ -198,7 +203,7 @@ mkdir -p $FARM
 mkdir -p $QRDIR
 
 TIMINGCMD="/usr/bin/time -o $DIR/.time -f %e "
-TIMEOUTCMD="timeout -k 30m "
+TIMEOUTCMD="timeout -k 35m 30m "
 
 for SF in 1 # 5 10 # 1 30
 do
@@ -225,6 +230,7 @@ do
 			CLIENTCMD="$MINS/bin/mclient -p $PORT "
 			INITFCMD="echo "
 			CREATEDBCMD="echo createdb"
+			DBVER=$MVER
 		fi
 		if [ "$DB" == "postgres" ] || [ "$DB" == "citusdata" ]; then
 			SERVERCMD="$PINS/bin/postgres -p $PORT \
@@ -244,7 +250,11 @@ do
 			CLIENTCMD="$PINS/bin/psql -p $PORT tpch -t -A -F , -f " 
 			INITFCMD="$PINS/bin/initdb -D "
 			CREATEDBCMD="$PINS/bin/createdb -p $PORT tpch"
+			DBVER=$PGVER
+		fi
 
+		if [ "$DB" == "citusdata" ]; then
+			DBVER=snapshot-`date +"%Y-%m-%d"`
 		fi
 
 		if [ "$DB" == "mariadb" ] ; then
@@ -252,6 +262,7 @@ do
 			CLIENTCMD="$MAINS/bin/mysql -P $PORT -N tpcd -B <" 
 			INITFCMD=""
 			CREATEDBCMD=""
+			DBVER=$MAVER
 		fi
 
 		if [ ! -d $DBFARM ] ; then
@@ -277,17 +288,17 @@ do
 			sed -e "s|DIR|$SFDDIR|" $SCDIR/$DB.load.sql > $DIR/.$DB.load.sql.local
 			$TIMINGCMD $CLIENTCMD $DIR/.$DB.load.sql.local > /dev/null
 			LDTIME=`cat $DIR/.time`
-			echo -e "$DB\t$SF\tload\t\t$LDTIME" >> $RESFL
+			echo -e "$DB\t$DBVER\t$SF\tload\t\t\t$LDTIME" >> $RESFL
 
 			# constraints
 			$TIMINGCMD $CLIENTCMD $SCDIR/$DB.constraints.sql > /dev/null
 			CTTIME=`cat $DIR/.time`
-			echo -e "$DB\t$SF\tconstraints\t\t$CTTIME" >> $RESFL
+			echo -e "$DB\t$DBVER\t$SF\tconstraints\t\t\t$CTTIME" >> $RESFL
 
 			# analyze/vacuum
 			$TIMINGCMD $CLIENTCMD $SCDIR/$DB.analyze.sql > /dev/null
 			AZTIME=`cat $DIR/.time`
-			echo -e "$DB\t$SF\tanalyze\t\t$AZTIME" >> $RESFL
+			echo -e "$DB\t$DBVER\t$SF\tanalyze\t\t\t$AZTIME" >> $RESFL
 			
 			# aand restart
 			kill `jobs -p`
@@ -295,7 +306,7 @@ do
 		fi
 		# we start with cold runs
 		# clear caches (fair loading)
-		for coldrun in {1..2}
+		for REP in {1..2}
 		do
 			for i in $QYDIR/q??.sql
 			do
@@ -306,7 +317,7 @@ do
 				qn=`basename $q`
 				$TIMEOUTCMD $TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-coldrun$coldrun-q$qn.out
 				QTIME=`cat $DIR/.time`
-				echo -e "$DB\t$SF\tcoldruns\t$qn\t$QTIME" >> $RESFL
+				echo -e "$DB\t$DBVER\t$SF\tcoldruns\t$qn\t$REP\t$QTIME" >> $RESFL
 				kill `jobs -p`
 				sleep 10
 			done
@@ -316,7 +327,7 @@ do
 		# warmup...
 		$SERVERCMD$DBFARM > /dev/null &
 		sleep 5
-		for warmup in {1..3}
+		for REP in {1..3}
 		do
 			for i in $QYDIR/q??.sql
 			do
@@ -324,7 +335,7 @@ do
 				qn=`basename $q`
 				$TIMEOUTCMD $TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-warmup$warmup-q$qn.out
 				QTIME=`cat $DIR/.time`
-				echo -e "$DB\t$SF\twarmup\t$qn\t$QTIME" >> $RESFL
+				echo -e "$DB\t$DBVER\t$SF\twarmup\t$qn\t$REP\t$QTIME" >> $RESFL
 			done
 		done
 
@@ -337,7 +348,7 @@ do
 				qn=`basename $q`
 				$TIMEOUTCMD $TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-hotrun$hotrun-q$qn.out
 				QTIME=`cat $DIR/.time`
-				echo -e "$DB\t$SF\thotruns\t$qn\t$QTIME" >> $RESFL
+				echo -e "$DB\t$DBVER\t$SF\thotruns\t$qn\t$REP\t$QTIME" >> $RESFL
 			done
 		done
 		kill `jobs -p`

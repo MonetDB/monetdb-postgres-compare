@@ -6,24 +6,20 @@ library(plyr)
 setwd("~/Desktop/compare/")
 
 textsize <- 16
-cBrwPl <- "Set1"
 theme <- theme_few(base_size = textsize) + 
 theme(axis.text.x = element_text(angle = 90, hjust = 1),
-	 # text=element_text(family="serif"),
 	  legend.title=element_blank(),
 	  legend.position=c(0.85,0.08))
-
 
 compare <- read.table("results.tsv",sep="\t",na.strings="")
 names(compare) <- c ("db","dbver","bmark","sf","phase","q","rep","time")
 
+# we have a 30 min time limit, so everything over that is a fail
+compare[compare$time>1800,]$time <- NA
+
 levels(compare$db) <- c("Citusdata","MonetDB","PostgreSQL")
 compare$db <- ordered(compare$db,levels=c("PostgreSQL","Citusdata","MonetDB"))
 levels(compare$q) <- toupper(levels(compare$q))
-
-#                      title="Query Speed (Hot)",subtitle="TPC-H SF5 (5.2 GB)"),
-#                      title="Query Speed (Hot)",subtitle="TPC-H SF10 (11 GB)"))
-
 
 tpcplot <- function(data,filename="out.pdf",sf=1,phase="hotruns",queries=levels(data$q),width=8,ylimit=100,main="",sub="") {
   pdata <- ddply(data[which(data$sf == as.character(sf) & data$phase==as.character(phase)),], 

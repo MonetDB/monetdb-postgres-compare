@@ -11,7 +11,7 @@ MVER=11.17.13
 PBVER=2.5.0
 PBCVER=0.15
 
-DIR=/export/scratch2/hannes/compar0r/
+DIR=/scratch/hannes/compare/
 SDIR=$DIR/.sources
 IDIR=$DIR/.install
 
@@ -20,7 +20,7 @@ MINS=$IDIR/monetdb-$MVER/
 
 PBCINS=$IDIR/protobuf-c-$PBCVER/
 PBINS=$IDIR/protobuf-$PBVER/
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PBINS/lib:$PBCINS/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PBINS/lib:$PBCINS/lib
 
 if [ ! -f $MINS/bin/mserver5 ] || [ ! -f $PINS/bin/postgres ] || [ ! -f $PINS/lib/cstore_fdw.so ] ; then
 	mkdir -p $SDIR
@@ -168,7 +168,7 @@ mkdir -p $QRDIR
 
 TIMINGCMD="/usr/bin/time -o $DIR/.time -f %e"
 
-for SF in 1 # 10 30
+for SF in 1 # 5 10 # 1 30
 do
 	# check if we have data
 	SFDDIR=$DDIR/sf-$SF/
@@ -192,6 +192,7 @@ do
 			SERVERCMD="$MINS/bin/mserver5 --set mapi_port=$PORT --daemon=yes --dbpath="
 			CLIENTCMD="$MINS/bin/mclient -p $PORT "
 			INITFCMD="echo "
+			CREATEDBCMD="echo createdb"
 		fi
 		if [ "$DB" == "postgres" ] || [ "$DB" == "citusdata" ]; then
 			SERVERCMD="$PINS/bin/postgres -p $PORT \
@@ -294,7 +295,7 @@ do
 			do
 				q=${i%.sql}
 				qn=`basename $q`
-				$TIMINGCMD $CLIENTCMD $i $QRDIR/$DB-SF$SF-hotrun$hotrun-q$qn.out
+				$TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-hotrun$hotrun-q$qn.out
 				QTIME=`cat $DIR/.time`
 				echo -e "$DB\t$SF\thotruns\t$qn\t$QTIME" >> $RESFL
 			done

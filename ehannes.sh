@@ -100,7 +100,7 @@ if [ ! -f $MAINS/bin/mysqld ] ; then
 	tar xvf $SDIR/mariadb-*.tar.* -C $SDIR
 	MASRC=$SDIR/mariadb-$MAVER/
 	cd $MASRC
-	cmake -DCMAKE_INSTALL_PREFIX:PATH=/scratch/hannes/compare/mariadb-install .
+	cmake -DCMAKE_INSTALL_PREFIX:PATH=$MAINS .
 	make
 	make install
 	cd $DIR

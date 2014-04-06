@@ -15,7 +15,7 @@ theme(axis.text.x = element_text(angle = 90, hjust = 1),
 
 
 compare <- read.table("results.tsv",sep="\t",na.strings="")
-names(compare) <- c ("db","dbver","sf","phase","q","rep","time")
+names(compare) <- c ("db","dbver","bmark","sf","phase","q","rep","time")
 
 levels(compare$db) <- c("Citusdata","MonetDB","PostgreSQL")
 compare$db <- ordered(compare$db,levels=c("PostgreSQL","Citusdata","MonetDB"))

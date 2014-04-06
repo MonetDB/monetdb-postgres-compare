@@ -203,6 +203,7 @@ PORT=51337
 mkdir -p $DDIR
 mkdir -p $FARM
 mkdir -p $QRDIR
+BMARK="tpch"
 
 TIMINGCMD="/usr/bin/time -o $DIR/.time -f %e "
 TIMEOUTCMD="timeout -k 35m 30m "
@@ -269,7 +270,7 @@ do
 
 		if [ ! -d $DBFARM ] ; then
 			# clear caches (fair loading)
-			$DROPCACHE
+			echo 3 | sudo /usr/bin/tee /proc/sys/vm/drop_caches
 			mkdir -p $DBFARM
 
 			# initialize db directory
@@ -290,17 +291,17 @@ do
 			sed -e "s|DIR|$SFDDIR|" $SCDIR/$DB.load.sql > $DIR/.$DB.load.sql.local
 			$TIMINGCMD $CLIENTCMD $DIR/.$DB.load.sql.local > /dev/null
 			LDTIME=`cat $DIR/.time`
-			echo -e "$DB\t$DBVER\t$SF\tload\t\t\t$LDTIME" >> $RESFL
+			echo -e "$DB\t$DBVER\t$BMARK\t$SF\tload\t\t\t$LDTIME" >> $RESFL
 
 			# constraints
 			$TIMINGCMD $CLIENTCMD $SCDIR/$DB.constraints.sql > /dev/null
 			CTTIME=`cat $DIR/.time`
-			echo -e "$DB\t$DBVER\t$SF\tconstraints\t\t\t$CTTIME" >> $RESFL
+			echo -e "$DB\t$DBVER\t$BMARK\t$SF\tconstraints\t\t\t$CTTIME" >> $RESFL
 
 			# analyze/vacuum
 			$TIMINGCMD $CLIENTCMD $SCDIR/$DB.analyze.sql > /dev/null
 			AZTIME=`cat $DIR/.time`
-			echo -e "$DB\t$DBVER\t$SF\tanalyze\t\t\t$AZTIME" >> $RESFL
+			echo -e "$DB\t$DBVER\t$BMARK\t$SF\tanalyze\t\t\t$AZTIME" >> $RESFL
 			
 			# aand restart
 			kill `jobs -p`
@@ -308,18 +309,18 @@ do
 		fi
 		# we start with cold runs
 		# clear caches (fair loading)
-		for REP in {1..2}
+		for REP in {1..5}
 		do
 			for i in $QYDIR/q??.sql
 			do
-				$DROPCACHE
+				echo 3 | sudo /usr/bin/tee /proc/sys/vm/drop_caches
 				$SERVERCMD$DBFARM > /dev/null &
 				sleep 5
 				q=${i%.sql}
 				qn=`basename $q`
 				$TIMEOUTCMD $TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-coldrun$coldrun-q$qn.out
 				QTIME=`cat $DIR/.time`
-				echo -e "$DB\t$DBVER\t$SF\tcoldruns\t$qn\t$REP\t$QTIME" >> $RESFL
+				echo -e "$DB\t$DBVER\t$BMARK\t$SF\tcoldruns\t$qn\t$REP\t$QTIME" >> $RESFL
 				kill `jobs -p`
 				sleep 10
 			done
@@ -329,7 +330,7 @@ do
 		# warmup...
 		$SERVERCMD$DBFARM > /dev/null &
 		sleep 5
-		for REP in {1..3}
+		for REP in {1..2}
 		do
 			for i in $QYDIR/q??.sql
 			do
@@ -337,12 +338,12 @@ do
 				qn=`basename $q`
 				$TIMEOUTCMD $TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-warmup$warmup-q$qn.out
 				QTIME=`cat $DIR/.time`
-				echo -e "$DB\t$DBVER\t$SF\twarmup\t$qn\t$REP\t$QTIME" >> $RESFL
+				echo -e "$DB\t$DBVER\t$BMARK\t$SF\twarmup\t$qn\t$REP\t$QTIME" >> $RESFL
 			done
 		done
 
 		# hot runs!
-		for hotrun in {1..5}
+		for REP in {1..5}
 		do
 			for i in $QYDIR/q??.sql
 			do
@@ -350,7 +351,7 @@ do
 				qn=`basename $q`
 				$TIMEOUTCMD $TIMINGCMD $CLIENTCMD $i > $QRDIR/$DB-SF$SF-hotrun$hotrun-q$qn.out
 				QTIME=`cat $DIR/.time`
-				echo -e "$DB\t$DBVER\t$SF\thotruns\t$qn\t$REP\t$QTIME" >> $RESFL
+				echo -e "$DB\t$DBVER\t$BMARK\t$SF\thotruns\t$qn\t$REP\t$QTIME" >> $RESFL
 			done
 		done
 		kill `jobs -p`

@@ -28,6 +28,8 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PBINS/lib:$PBCINS/lib
 mkdir -p $SDIR
 mkdir -p $IDIR
 
+DROPCACHE="echo 3 | sudo /usr/bin/tee /proc/sys/vm/drop_caches"
+
 # clean up source dir first
 rm -rf $SDIR/*
 
@@ -219,7 +221,7 @@ do
 		mv *.tbl $SFDDIR
 	fi
 	cd $DIR
-	for DB in mariadb citusdata postgres monetdb
+	for DB in  citusdata postgres monetdb #mariadb
 	do
 		DBNAME=$DB-sf$SF
 		DBFARM=$FARM/$DBNAME/
@@ -267,7 +269,7 @@ do
 
 		if [ ! -d $DBFARM ] ; then
 			# clear caches (fair loading)
-			#sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
+			$DROPCACHE
 			mkdir -p $DBFARM
 
 			# initialize db directory
@@ -310,7 +312,7 @@ do
 		do
 			for i in $QYDIR/q??.sql
 			do
-				#sudo bash -c "echo 3 > /proc/sys/vm/drop_caches"
+				$DROPCACHE
 				$SERVERCMD$DBFARM > /dev/null &
 				sleep 5
 				q=${i%.sql}

@@ -1,8 +1,8 @@
-COPY customer FROM 'DIR/customer.tbl' WITH DELIMITER AS '|';
-COPY lineitem FROM 'DIR/lineitem.tbl' WITH DELIMITER AS '|';
-COPY nation FROM 'DIR/nation.tbl' WITH DELIMITER AS '|';
-COPY orders FROM 'DIR/orders.tbl' WITH DELIMITER AS '|';
-COPY part FROM 'DIR/part.tbl' WITH DELIMITER AS '|';
-COPY partsupp FROM 'DIR/partsupp.tbl' WITH DELIMITER AS '|';
-COPY region FROM 'DIR/region.tbl' WITH DELIMITER AS '|';
-COPY supplier FROM 'DIR/supplier.tbl' WITH DELIMITER AS '|';
+LOAD DATA INFILE 'DIR/customer.tbl' INTO TABLE customer FIELDS TERMINATED BY '|';
+LOAD DATA INFILE 'DIR/lineitem.tbl' INTO TABLE lineitem FIELDS TERMINATED BY '|';
+LOAD DATA INFILE 'DIR/nation.tbl' INTO TABLE nation FIELDS TERMINATED BY '|';
+LOAD DATA INFILE 'DIR/orders.tbl' INTO TABLE orders FIELDS TERMINATED BY '|';
+LOAD DATA INFILE 'DIR/part.tbl' INTO TABLE part FIELDS TERMINATED BY '|';
+LOAD DATA INFILE 'DIR/partsupp.tbl' INTO TABLE partsupp FIELDS TERMINATED BY '|';
+LOAD DATA INFILE 'DIR/region.tbl' INTO TABLE region FIELDS TERMINATED BY '|';
+LOAD DATA INFILE 'DIR/supplier.tbl' INTO TABLE supplier FIELDS TERMINATED BY '|';

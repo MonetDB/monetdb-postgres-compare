@@ -13,7 +13,7 @@ MAVER=10.0.10
 PBVER=2.5.0
 PBCVER=0.15
 
-DIR=/scratch/hannes/compare/
+DIR=/export/scratch2/hannes/compare/
 SDIR=$DIR/.sources
 IDIR=$DIR/.install
 
@@ -208,7 +208,7 @@ BMARK="tpch"
 TIMINGCMD="/usr/bin/time -o $DIR/.time -f %e "
 TIMEOUTCMD="timeout -k 35m 30m "
 
-for SF in 1 5 10
+for SF in 1 #5 10
 do
 	# check if we have data
 	SFDDIR=$DDIR/sf-$SF/
@@ -222,7 +222,7 @@ do
 		mv *.tbl $SFDDIR
 	fi
 	cd $DIR
-	for DB in postgres # citusdata postgres monetdb mariadb
+	for DB in postgres citusdata postgres monetdb # mariadb
 	do
 		DBNAME=$DB-sf$SF
 		DBFARM=$FARM/$DBNAME/

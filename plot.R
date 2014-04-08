@@ -62,9 +62,9 @@ tpcplot(data=compare,filename="sf1-cold-subset.pdf",sf="1",phase="coldruns",quer
 tpcplot(data=compare,filename="sf1-cold-all.pdf",sf="1",phase="coldruns",ylimit=25,main="Query Speed (Cold)",sub="TPC-H SF1 (1.1 GB)",width=20)
 
 # sf5
-tpcplot(data=compare,filename="sf5-hot-subset.pdf",sf="5",phase="hotruns",queries=qss,ylimit=20,main="Query Speed (Hot)",sub="TPC-H SF5 (5.2 GB)")
+tpcplot(data=compare,filename="sf5-hot-subset.pdf",sf="5",phase="hotruns",queries=qss,ylimit=70,main="Query Speed (Hot)",sub="TPC-H SF5 (5.2 GB)")
 tpcplot(data=compare,filename="sf5-hot-all.pdf",sf="5",phase="hotruns",ylimit=80,main="Query Speed (Hot)",sub="TPC-H SF5 (5.2 GB)",width=20)
-tpcplot(data=compare,filename="sf5-cold-subset.pdf",sf="5",phase="coldruns",queries=qss,ylimit=60,main="Query Speed (Cold)",sub="TPC-H SF5 (5.2 GB)")
+tpcplot(data=compare,filename="sf5-cold-subset.pdf",sf="5",phase="coldruns",queries=qss,ylimit=70,main="Query Speed (Cold)",sub="TPC-H SF5 (5.2 GB)")
 tpcplot(data=compare,filename="sf5-cold-all.pdf",sf="5",phase="coldruns",ylimit=100,main="Query Speed (Cold)",sub="TPC-H SF5 (5.2 GB)",width=20)
 
 # sf10

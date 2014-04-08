@@ -55,19 +55,19 @@ tpcplot <- function(data,filename="out.pdf",sf=1,phase="hotruns",queries=levels(
 qss <- c("Q03","Q05","Q06","Q10")
 
 # sf1
-tpcplot(data=compare,filename="sf1-hot-subset.pdf",sf="1",phase="hotruns",queries=qss,ylimit=4,main="Query Speed (Hot)",sub="TPC-H SF1 (1.1 GB)")
-tpcplot(data=compare,filename="sf1-hot-all.pdf",sf="1",phase="hotruns",ylimit=25,main="Query Speed (Hot)",sub="TPC-H SF1 (1.1 GB)",width=20)
-tpcplot(data=compare,filename="sf1-cold-subset.pdf",sf="1",phase="coldruns",queries=qss,ylimit=12,main="Query Speed (Cold)",sub="TPC-H SF1 (1.1 GB)")
-tpcplot(data=compare,filename="sf1-cold-all.pdf",sf="1",phase="coldruns",ylimit=25,main="Query Speed (Cold)",sub="TPC-H SF1 (1.1 GB)",width=20)
+#tpcplot(data=compare,filename="sf1-hot-subset.pdf",sf="1",phase="hotruns",queries=qss,ylimit=4,main="Query Speed (Hot)",sub="TPC-H SF1 (1.1 GB)")
+#tpcplot(data=compare,filename="sf1-hot-all.pdf",sf="1",phase="hotruns",ylimit=25,main="Query Speed (Hot)",sub="TPC-H SF1 (1.1 GB)",width=20)
+#tpcplot(data=compare,filename="sf1-cold-subset.pdf",sf="1",phase="coldruns",queries=qss,ylimit=12,main="Query Speed (Cold)",sub="TPC-H SF1 (1.1 GB)")
+#tpcplot(data=compare,filename="sf1-cold-all.pdf",sf="1",phase="coldruns",ylimit=25,main="Query Speed (Cold)",sub="TPC-H SF1 (1.1 GB)",width=20)
 
 # sf5
-tpcplot(data=compare,filename="sf5-hot-subset.pdf",sf="5",phase="hotruns",queries=qss,ylimit=20,main="Query Speed (Hot)",sub="TPC-H SF5 (5.2 GB)")
-tpcplot(data=compare,filename="sf5-hot-all.pdf",sf="5",phase="hotruns",ylimit=80,main="Query Speed (Hot)",sub="TPC-H SF5 (5.2 GB)",width=20)
-tpcplot(data=compare,filename="sf5-cold-subset.pdf",sf="5",phase="coldruns",queries=qss,ylimit=60,main="Query Speed (Cold)",sub="TPC-H SF5 (5.2 GB)")
-tpcplot(data=compare,filename="sf5-cold-all.pdf",sf="5",phase="coldruns",ylimit=100,main="Query Speed (Cold)",sub="TPC-H SF5 (5.2 GB)",width=20)
+tpcplot(data=compare,filename="sf5-hot-subset.pdf",sf="5",phase="hotruns",queries=qss,ylimit=70,main="Query Speed (Hot)",sub="TPC-H SF5 (5.2 GB)")
+#tpcplot(data=compare,filename="sf5-hot-all.pdf",sf="5",phase="hotruns",ylimit=80,main="Query Speed (Hot)",sub="TPC-H SF5 (5.2 GB)",width=20)
+tpcplot(data=compare,filename="sf5-cold-subset.pdf",sf="5",phase="coldruns",queries=qss,ylimit=70,main="Query Speed (Cold)",sub="TPC-H SF5 (5.2 GB)")
+#tpcplot(data=compare,filename="sf5-cold-all.pdf",sf="5",phase="coldruns",ylimit=100,main="Query Speed (Cold)",sub="TPC-H SF5 (5.2 GB)",width=20)
 
 # sf10
-tpcplot(data=compare,filename="sf10-hot-subset.pdf",sf="10",phase="hotruns",queries=qss,ylimit=40,main="Query Speed (Hot)",sub="TPC-H SF10 (11 GB)")
-tpcplot(data=compare,filename="sf10-hot-all.pdf",sf="10",phase="hotruns",ylimit=100,main="Query Speed (Hot)",sub="TPC-H SF10 (11 GB)",width=20)
-tpcplot(data=compare,filename="sf10-cold-subset.pdf",sf="10",phase="coldruns",queries=qss,ylimit=50,main="Query Speed (Cold)",sub="TPC-H SF10 (11 GB)")
-tpcplot(data=compare,filename="sf10-cold-all.pdf",sf="10",phase="coldruns",ylimit=100,main="Query Speed (Cold)",sub="TPC-H SF10 (11 GB)",width=20)
+#tpcplot(data=compare,filename="sf10-hot-subset.pdf",sf="10",phase="hotruns",queries=qss,ylimit=40,main="Query Speed (Hot)",sub="TPC-H SF10 (11 GB)")
+#tpcplot(data=compare,filename="sf10-hot-all.pdf",sf="10",phase="hotruns",ylimit=100,main="Query Speed (Hot)",sub="TPC-H SF10 (11 GB)",width=20)
+#tpcplot(data=compare,filename="sf10-cold-subset.pdf",sf="10",phase="coldruns",queries=qss,ylimit=50,main="Query Speed (Cold)",sub="TPC-H SF10 (11 GB)")
+#tpcplot(data=compare,filename="sf10-cold-all.pdf",sf="10",phase="coldruns",ylimit=100,main="Query Speed (Cold)",sub="TPC-H SF10 (11 GB)",width=20)

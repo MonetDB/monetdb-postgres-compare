@@ -153,7 +153,7 @@ runQuery() { # runQuery PHASE REP DROPC
 			# run query
 			eval "$TIMEOUTCMD$TIMINGCMD$CLIENTCMD$QFILE" > $QRDIR/$DB-SF$SF-coldrun$coldrun-$qn.out
 			QTIME=`cat $DIR/.time`
-			echo -e "$LOGPREFIX\t$1\t$qn\t$REP\t$QTIME" >> $RESFL
+			echo -e "$LOGPREFIX\t$1\t$qn\t$REP\t$QTIME" | tee -a $RESFL 
 
 			if [ "$3" -gt 0 ] ; then
 				# shutdown db
@@ -281,7 +281,6 @@ do
 			DBVER=$PGVER
 		fi
 
-		# TODO: does postgres run with a missing shared_preload?
 		if [ "$DB" == "citusdata" ]; then
 			# Citusdata installer
 			if [ ! -f $PINS/lib/cstore_fdw.so ] ; then
@@ -338,10 +337,12 @@ do
 				echo "Failed to install MariaDB"
 				exit -1
 			fi
-
+			# http://mysql.rjweb.org/doc.php/memory
 			DBSOCK=$DIR/.mariadb.socket
 			SERVERCMD="$MAINS/bin/mysqld \
 			--lower_case_table_names=1 \
+			--innodb_buffer_pool_size=10G \
+			--key_buffer_size=10M \
 			--basedir=$MAINS -P $PORT --pid-file=$DIR/.mariadb.pid --socket=$DBSOCK --datadir="
 			CLIENTCMD="$MAINS/bin/mysql -u root --socket=$DBSOCK tpch < " 
 			INITFCMD="$MAINS/scripts/mysql_install_db --basedir=$MAINS --datadir="
@@ -376,17 +377,17 @@ do
 			sed -e "s|DIR|$SFDDIR|" $SCDIR/$DB.load.sql > $DIR/.$DB.load.sql.local
 			eval "$TIMINGCMD$CLIENTCMD$DIR/.$DB.load.sql.local" > /dev/null
 			LDTIME=`cat $DIR/.time`
-			echo -e "$LOGPREFIX\tload\t\t\t$LDTIME" >> $RESFL
+			echo -e "$LOGPREFIX\tload\t\t\t$LDTIME" | tee -a $RESFL 
 
 			# constraints
 			eval "$TIMINGCMD$CLIENTCMD$SCDIR/$DB.constraints.sql" > /dev/null
 			CTTIME=`cat $DIR/.time`
-			echo -e "$LOGPREFIX\tconstraints\t\t\t$CTTIME" >> $RESFL
+			echo -e "$LOGPREFIX\tconstraints\t\t\t$CTTIME" | tee -a $RESFL 
 
 			# analyze/vacuum
 			eval "$TIMINGCMD$CLIENTCMD$SCDIR/$DB.analyze.sql" > /dev/null
 			AZTIME=`cat $DIR/.time`
-			echo -e "$LOGPREFIX\tanalyze\t\t\t$AZTIME" >> $RESFL
+			echo -e "$LOGPREFIX\tanalyze\t\t\t$AZTIME" | tee -a $RESFL 
 			
 			shutdown
 		fi

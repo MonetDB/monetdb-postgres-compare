@@ -271,6 +271,9 @@ do
 			-c wal_buffers=32MB \
 			-c checkpoint_segments=64 \
 			-c max_connections=10 \
+			-c shared_buffers=$pg_shared_buffers \
+			-c effective_cache_size=$pg_effective_cache_size \
+			-c work_mem=$pg_work_mem \
 			$PGPRELOAD \
 			 -D "
 			CLIENTCMD="$PINS/bin/psql -p $PORT tpch -t -A -F , -f " 

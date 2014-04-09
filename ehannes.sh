@@ -99,8 +99,9 @@ mkdir -p $IDIR
 rm -rf $SDIR/*
 
 # remove this thing to force a rebuild of the citusdata extension, it might change quickly
-rm $PINS/lib/cstore_fdw.so
-
+if [ -f $PINS/lib/cstore_fdw.so ] ; then
+	rm $PINS/lib/cstore_fdw.so
+fi
 # some setup for PostgreSQL according to Dr. Kyzirakos (TM)
 # here: 16 GB
 pg_shared_buffers=10GB
@@ -137,7 +138,7 @@ dropCache() {
 }
 
 runQuery() { # runQuery PHASE REP DROPC
-	for REP in {1..$2}
+	for REP in `seq $2`
 	do
 		for QFILE in $QYDIR/q??.sql
 		do
@@ -341,8 +342,23 @@ do
 			DBSOCK=$DIR/.mariadb.socket
 			SERVERCMD="$MAINS/bin/mysqld \
 			--lower_case_table_names=1 \
-			--innodb_buffer_pool_size=10G \
 			--key_buffer_size=10M \
+			--table_cache=2048 \
+			--max_allowed_packet=1M \
+			--binlog_cache_size=1M \
+			--max_heap_table_size=64M \
+			--sort_buffer_size=64M \
+			--read_buffer_size=64M \
+			--join_buffer_size=64M \
+			--thread_cache=16 \
+			--thread_concurrency=16 \
+			--thread_stack=196K \
+			--query_cache_size=0 \
+			--ft_min_word_len=4 \
+			--transaction_isolation=REPEATABLE-READ \
+			--tmp_table_size=64M \
+			--key_buffer_size=2G \
+			--innodb_buffer_pool_size=10G \
 			--basedir=$MAINS -P $PORT --pid-file=$DIR/.mariadb.pid --socket=$DBSOCK --datadir="
 			CLIENTCMD="$MAINS/bin/mysql -u root --socket=$DBSOCK tpch < " 
 			INITFCMD="$MAINS/scripts/mysql_install_db --basedir=$MAINS --datadir="
@@ -351,6 +367,7 @@ do
 				$MAINS/bin/mysqladmin -u root --socket=$DBSOCK shutdown
 			}
 			DBVER=$MAVER
+
 		fi
 
 		LOGPREFIX="$DB\t$DBVER\t$BMARK\t$SF"

@@ -180,7 +180,7 @@ do
 			cd $SDIR/tpch_2_16_1/dbgen
 			sed -e 's/DATABASE\s*=/DATABASE=DB2/' -e 's/MACHINE\s*=/MACHINE=LINUX/' -e 's/WORKLOAD\s*=/WORKLOAD=TPCH/' -e 's/CC\s*=/CC=gcc/' makefile.suite > Makefile
 			make
-			mkdir $IDIR/dbgen/
+			mkdir -p $IDIR/dbgen/
 			cp dbgen dists.dss $IDIR/dbgen/
 			rm -rf $SDIR/tpch_*
 		fi

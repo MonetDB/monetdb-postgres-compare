@@ -70,11 +70,11 @@ echo "Using prefix directory $p"
 
 # db versions
 # PostgreSQL
-PGVER=9.3.4
+PGVER=9.6.6
 # MonetDB
-MVER=11.17.13
+MVER=11.27.9
 # MariaDB
-MAVER=10.0.10
+MAVER=10.2.10
 
 # protobuf stuff, does probably not need to change as fast
 PBVER=2.5.0
@@ -175,9 +175,9 @@ do
 		# TPC-H dbgen installer
 		if [ ! -f $IDIR/dbgen/dbgen ] ; then
 			rm -rf $IDIR/dbgen/
-			wget http://www.tpc.org/tpch/spec/tpch_2_16_1.zip -P $SDIR
+			wget https://github.com/electrum/tpch-dbgen/archive/master.zip -O $SDIR/tpch_gh.zip
 			unzip $SDIR/tpch_*.zip -d $SDIR
-			cd $SDIR/tpch_2_16_1/dbgen
+			cd $SDIR/tpch-dbgen-master
 			sed -e 's/DATABASE\s*=/DATABASE=DB2/' -e 's/MACHINE\s*=/MACHINE=LINUX/' -e 's/WORKLOAD\s*=/WORKLOAD=TPCH/' -e 's/CC\s*=/CC=gcc/' makefile.suite > Makefile
 			make
 			mkdir -p $IDIR/dbgen/
@@ -269,7 +269,6 @@ do
 			-c constraint_exclusion=on \
 			-c checkpoint_completion_target=0.9 \
 			-c wal_buffers=32MB \
-			-c checkpoint_segments=64 \
 			-c max_connections=10 \
 			-c shared_buffers=$pg_shared_buffers \
 			-c effective_cache_size=$pg_effective_cache_size \

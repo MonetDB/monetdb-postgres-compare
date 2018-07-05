@@ -74,7 +74,7 @@ PGVER=9.6.6
 # MonetDB
 MVER=11.27.9
 # MariaDB
-MAVER=10.2.10
+MAVER=10.2.14
 
 # protobuf stuff, does probably not need to change as fast
 PBVER=2.5.0
@@ -324,7 +324,7 @@ do
 			# MariaDB installer
 			if [ ! -f $MAINS/bin/mysqld ] ; then
 				rm -rf $MAINS
-				MAURL=http://mariadb.mirror.triple-it.nl//mariadb-$MAVER/kvm-tarbake-jaunty-x86/mariadb-$MAVER.tar.gz
+				MAURL=https://downloads.mariadb.org/f/mariadb-$MAVER/source/mariadb-$MAVER.tar.gz
 				wget $MAURL -P $SDIR
 				tar xvf $SDIR/mariadb-*.tar.* -C $SDIR
 				MASRC=$SDIR/mariadb-$MAVER/
